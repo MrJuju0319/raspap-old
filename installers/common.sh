@@ -135,15 +135,15 @@ function create_hostapd_scripts() {
 
 
 # Fetches latest files from github to webroot
-#function download_latest_files() {
-#    if [ -d "$webroot_dir" ]; then
-#        sudo mv $webroot_dir "$webroot_dir.`date +%F-%R`" || install_error "Unable to remove old webroot directory"
-#    fi
-#
-#    install_log "Cloning latest files from github"
-#    git clone --depth 1 https://github.com/MrJuju0319/raspap-old /tmp/raspap-webgui || install_error "Unable to download files from github"
-#    sudo mv /tmp/raspap-webgui $webroot_dir || install_error "Unable to move raspap-webgui to web root"
-#}
+function download_latest_files() {
+    if [ -d "$webroot_dir" ]; then
+        sudo mv $webroot_dir "$webroot_dir.`date +%F-%R`" || install_error "Unable to remove old webroot directory"
+    fi
+
+    install_log "Cloning latest files from github"
+    git clone --depth 1 https://github.com/MrJuju0319/raspap-old /tmp/raspap-webgui || install_error "Unable to download files from github"
+    sudo mv /tmp/raspap-webgui $webroot_dir || install_error "Unable to move raspap-webgui to web root"
+}
 
 # Sets files ownership in web root directory
 function change_file_ownership() {
@@ -353,7 +353,7 @@ function install_raspap() {
     enable_php_lighttpd
     create_raspap_directories
     check_for_old_configs
-#    download_latest_files
+    download_latest_files
     change_file_ownership
     create_hostapd_scripts
     move_config_file
