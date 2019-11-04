@@ -353,7 +353,7 @@ function install_raspap() {
     enable_php_lighttpd
     create_raspap_directories
     check_for_old_configs
-    download_latest_files
+#    download_latest_files
     change_file_ownership
     create_hostapd_scripts
     move_config_file
