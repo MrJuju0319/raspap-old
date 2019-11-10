@@ -9,8 +9,8 @@
             element: placeholder,
             xkey: 'date',
             ykeys: ['rx', 'tx'],
-            labels: [_t['receive']+' '+datasizeunits.toUpperCase(), 
-                     _t['send']+' '+datasizeunits.toUpperCase()]
+            labels: [_t['send']+' '+datasizeunits.toUpperCase(), 
+                     _t['receive']+' '+datasizeunits.toUpperCase()]
         });
 
       return barchart;
@@ -31,11 +31,9 @@
      */
     function ShowBandwidthChartHandler(e) {
         // Remove all morrisjs charts
-        $('#divChartBandwidthhourly').empty();
         $('#divChartBandwidthdaily').empty();
         $('#divChartBandwidthmonthly').empty();
         // Remove all datatables
-        $('#divTableBandwidthhourly').empty();
         $('#divTableBandwidthdaily').empty();
         $('#divTableBandwidthmonthly').empty();
         // Construct ajax uri for getting the proper data.
@@ -68,8 +66,8 @@
                 'order': [[ 0, 'ASC' ]],
                 'columns': [
                     { 'data': 'date' },
-                    { 'data': 'rx', "title": _t['receive']+' '+datasizeunits.toUpperCase() },
-                    { 'data': 'tx', "title": _t['send']+' '+datasizeunits.toUpperCase() }]
+                    { 'data': 'rx', "title": _t['send']+' '+datasizeunits.toUpperCase() },
+                    { 'data': 'tx', "title": _t['receive']+' '+datasizeunits.toUpperCase() }]
             });
         }).fail(function(xhr, textStatus) {
             if (window.console) {
@@ -82,8 +80,8 @@
 
     $(document).ready(function() {
         $('#tabbarBandwidth a[data-toggle="tab"]').on('shown.bs.tab', ShowBandwidthChartHandler);
-        $('#cbxInterfacehourly').on('change', ShowBandwidthChartHandler);
         $('#cbxInterfacedaily').on('change', ShowBandwidthChartHandler);
+        $('#cbxInterfaceweekly').on('change', ShowBandwidthChartHandler);
         $('#cbxInterfacemonthly').on('change', ShowBandwidthChartHandler);
         ShowBandwidthChartHandler();
     });

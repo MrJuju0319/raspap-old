@@ -5,25 +5,20 @@ version=`sed 's/\..*//' /etc/debian_version`
 # Determine version, set default home location for lighttpd and 
 # php package to install 
 webroot_dir="/var/www/html" 
-if [ $version -eq 10 ]; then
-    version_msg="Raspbian 10.0 (Buster)"
-    php_package="php7.1-cgi"
-elif [ $version -eq 9 ]; then
-    version_msg="Raspbian 9.0 (Stretch)" 
+if [ $version -eq 9 ]; then 
+    version_msg="Raspian 9.0 (Stretch)" 
     php_package="php7.0-cgi" 
 elif [ $version -eq 8 ]; then 
-    version_msg="Raspbian 8.0 (Jessie)" 
+    version_msg="Raspian 8.0 (Jessie)" 
     php_package="php5-cgi" 
 else 
-    version_msg="Raspbian earlier than 8.0 (Wheezy)"
+    version_msg="Raspian earlier than 8.0 (Wheezy)"
     webroot_dir="/var/www" 
     php_package="php5-cgi" 
 fi
 
 phpcgiconf=""
-if [ "$php_package" = "php7.1-cgi" ]; then
-    phpcgiconf="/etc/php/7.1/cgi/php.ini"
-elif [ "$php_package" = "php7.0-cgi" ]; then
+if [ "$php_package" = "php7.0-cgi" ]; then
     phpcgiconf="/etc/php/7.0/cgi/php.ini"
 elif [ "$php_package" = "php5-cgi" ]; then
     phpcgiconf="/etc/php5/cgi/php.ini"
@@ -60,7 +55,7 @@ function display_welcome() {
     echo -e "                             88"                             
     echo -e "                             dP"                             
     echo -e "${green}"
-    echo -e "Install By MrJuJu0319\n\n"
+    echo -e "The Quick Installer will guide you through a few easy steps\n\n"
 }
 
 ### NOTE: all the below functions are overloadable for system-specific installs
@@ -119,18 +114,16 @@ function create_raspap_directories() {
     sudo chown -R $raspap_user:$raspap_user "$raspap_dir" || install_error "Unable to change file ownership for '$raspap_dir'"
 }
 
-# Generate hostapd logging and service control scripts
-function create_hostapd_scripts() {
-    install_log "Creating hostapd logging & control scripts"
+# Generate logging enable/disable files for hostapd
+function create_logging_scripts() {
+    install_log "Creating logging scripts"
     sudo mkdir $raspap_dir/hostapd || install_error "Unable to create directory '$raspap_dir/hostapd'"
 
-    # Move logging shell scripts 
+    # Move existing shell scripts 
     sudo mv "$webroot_dir/installers/"*log.sh "$raspap_dir/hostapd" || install_error "Unable to move logging scripts"
-    # Move service control shell scripts
-    sudo mv "$webroot_dir/installers/"service*.sh "$raspap_dir/hostapd" || install_error "Unable to move service control scripts"
     # Make enablelog.sh and disablelog.sh not writable by www-data group.
-    sudo chown -c root:"$raspap_user" "$raspap_dir/hostapd/"*.sh || install_error "Unable change owner and/or group."
-    sudo chmod 750 "$raspap_dir/hostapd/"*.sh || install_error "Unable to change file permissions."
+    sudo chown -c root:"$raspap_user" "$raspap_dir/hostapd/"*log.sh || install_error "Unable change owner and/or group."
+    sudo chmod 750 "$raspap_dir/hostapd/"*log.sh || install_error "Unable to change file permissions."
 }
 
 
@@ -141,7 +134,7 @@ function download_latest_files() {
     fi
 
     install_log "Cloning latest files from github"
-    git clone --depth 1 https://github.com/MrJuju0319/raspap-old /tmp/raspap-webgui || install_error "Unable to download files from github"
+    git clone --depth 1 https://github.com/billz/raspap-webgui /tmp/raspap-webgui || install_error "Unable to download files from github"
     sudo mv /tmp/raspap-webgui $webroot_dir || install_error "Unable to move raspap-webgui to web root"
 }
 
@@ -210,7 +203,7 @@ function default_configuration() {
     lines=(
     'echo 1 > \/proc\/sys\/net\/ipv4\/ip_forward #RASPAP'
     'iptables -t nat -A POSTROUTING -j MASQUERADE #RASPAP'
-    'iptables -t nat -A POSTROUTING -s 192.168.50.0\/24 ! -d 192.168.50.0\/24 -j MASQUERADE #RASPAP'
+
     )
     
     for line in "${lines[@]}"; do
@@ -221,10 +214,6 @@ function default_configuration() {
             echo "Adding line $line"
         fi
     done
-
-    # Force a reload of new settings in /etc/rc.local
-    sudo systemctl restart rc-local.service
-    sudo systemctl daemon-reload
 }
 
 
@@ -249,15 +238,13 @@ function patch_system_files() {
         "/bin/cp /tmp/wifidata /etc/wpa_supplicant/wpa_supplicant-wlan[0-9].conf"
         "/sbin/wpa_cli -i wlan[0-9] scan_results"
         "/sbin/wpa_cli -i wlan[0-9] scan"
-        "/sbin/wpa_cli -i wlan[0-9] reconfigure"
-	"/sbin/wpa_cli -i wlan[0-9] select_network"
+        "/sbin/wpa_cli reconfigure"
         "/bin/cp /tmp/hostapddata /etc/hostapd/hostapd.conf"
         "/etc/init.d/hostapd start"
         "/etc/init.d/hostapd stop"
         "/etc/init.d/dnsmasq start"
         "/etc/init.d/dnsmasq stop"
         "/bin/cp /tmp/dhcpddata /etc/dnsmasq.conf"
-        "/bin/cp /tmp/dhcpddata /etc/dhcpcd.conf"
         "/sbin/shutdown -h now"
         "/sbin/reboot"
         "/sbin/ip link set wlan[0-9] down"
@@ -266,7 +253,6 @@ function patch_system_files() {
         "/bin/cp /etc/raspap/networking/dhcpcd.conf /etc/dhcpcd.conf"
         "/etc/raspap/hostapd/enablelog.sh"
         "/etc/raspap/hostapd/disablelog.sh"
-        "/etc/raspap/hostapd/servicestart.sh"
     )
 
     # Check if sudoers needs patching
@@ -285,10 +271,6 @@ function patch_system_files() {
     else
         install_log "Sudoers file already patched"
     fi
-
-    # Unmask and enable hostapd.service
-    sudo systemctl unmask hostapd.service
-    sudo systemctl enable hostapd.service
 }
 
 
@@ -331,17 +313,13 @@ function optimize_php() {
 function install_complete() {
     install_log "Installation completed!"
 
-    # Prompt to reboot if wired ethernet (eth0) is connected.
-    # With default_configuration this will create an active AP on restart.
-    if ip a | grep -q ': eth0:.*state UP'; then
-        echo -n "The system needs to be rebooted as a final step. Reboot now? [y/N]: "
-        read answer
-        if [[ $answer != "y" ]]; then
-            echo "Installation reboot aborted."
-            exit 0
-        fi
-        sudo shutdown -r now || install_error "Unable to execute shutdown"
+    echo -n "The system needs to be rebooted as a final step. Reboot now? [y/N]: "
+    read answer
+    if [[ $answer != "y" ]]; then
+        echo "Installation reboot aborted."
+        exit 0
     fi
+    sudo shutdown -r now || install_error "Unable to execute shutdown"
 }
 
 function install_raspap() {
@@ -355,7 +333,7 @@ function install_raspap() {
     check_for_old_configs
     download_latest_files
     change_file_ownership
-    create_hostapd_scripts
+    create_logging_scripts
     move_config_file
     default_configuration
     patch_system_files
