@@ -5,20 +5,25 @@ version=`sed 's/\..*//' /etc/debian_version`
 # Determine version, set default home location for lighttpd and 
 # php package to install 
 webroot_dir="/var/www/html" 
-if [ $version -eq 9 ]; then 
-    version_msg="Raspian 9.0 (Stretch)" 
+if [ $version -eq 10 ]; then
+    version_msg="Raspbian 10.0 (Buster)"
+    php_package="php7.1-cgi"
+elif [ $version -eq 9 ]; then
+    version_msg="Raspbian 9.0 (Stretch)" 
     php_package="php7.0-cgi" 
 elif [ $version -eq 8 ]; then 
-    version_msg="Raspian 8.0 (Jessie)" 
+    version_msg="Raspbian 8.0 (Jessie)" 
     php_package="php5-cgi" 
 else 
-    version_msg="Raspian earlier than 8.0 (Wheezy)"
+    version_msg="Raspbian earlier than 8.0 (Wheezy)"
     webroot_dir="/var/www" 
     php_package="php5-cgi" 
 fi
 
 phpcgiconf=""
-if [ "$php_package" = "php7.0-cgi" ]; then
+if [ "$php_package" = "php7.1-cgi" ]; then
+    phpcgiconf="/etc/php/7.1/cgi/php.ini"
+elif [ "$php_package" = "php7.0-cgi" ]; then
     phpcgiconf="/etc/php/7.0/cgi/php.ini"
 elif [ "$php_package" = "php5-cgi" ]; then
     phpcgiconf="/etc/php5/cgi/php.ini"
@@ -55,7 +60,7 @@ function display_welcome() {
     echo -e "                             88"                             
     echo -e "                             dP"                             
     echo -e "${green}"
-    echo -e "The Quick Installer will guide you through a few easy steps\n\n"
+    echo -e "MrJuJu0319 Installateur\n\n"
 }
 
 ### NOTE: all the below functions are overloadable for system-specific installs
